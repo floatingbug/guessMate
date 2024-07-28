@@ -2,6 +2,7 @@
 import {ref, onMounted, inject} from "vue";
 import Card from "primevue/card";
 import Paginator from 'primevue/paginator';
+import {deleteFromApi} from "../services/deleteFromApi.js";
 const API_URL = inject("API_URL");
 const userData = ref();
 const errMsg = ref("");
@@ -13,6 +14,26 @@ let token = null;
 
 onMounted(async () => {
 	token = localStorage.getItem("token");
+
+	await getUserData();
+
+	isResponseFromServer.value = true;
+});
+
+function changeSlideQuizzes(e){
+	const transValue = e.page * -100;
+	cardStyleQuizzes.value = `transform: translateX(${transValue}%)`;
+};
+function changeSlideAnswers(e){
+	const transValue = e.page * -100;
+	cardStyleAnswers.value = `transform: translateX(${transValue}%)`;
+};
+function changeSlideGuesses(e){
+	const transValue = e.page * -100;
+	cardStyleGuesses.value = `transform: translateX(${transValue}%)`;
+};
+
+async function getUserData(){
 	const options = {
 		method: "GET",
 		headers: {
@@ -37,22 +58,7 @@ onMounted(async () => {
 
 	//eval guesses results
 	if(userData.value.guesses.length > 0) evalGuesses();
-
-	isResponseFromServer.value = true;
-});
-
-function changeSlideQuizzes(e){
-	const transValue = e.page * -100;
-	cardStyleQuizzes.value = `transform: translateX(${transValue}%)`;
-};
-function changeSlideAnswers(e){
-	const transValue = e.page * -100;
-	cardStyleAnswers.value = `transform: translateX(${transValue}%)`;
-};
-function changeSlideGuesses(e){
-	const transValue = e.page * -100;
-	cardStyleGuesses.value = `transform: translateX(${transValue}%)`;
-};
+}
 
 function evalGuesses(){
 	userData.value.guesses.forEach(g => {
@@ -85,7 +91,7 @@ function evalGuesses(){
 					<template #title><p>Quiz Title: {{quiz.quizTitle}}</p></template>
 					<template #content>
 						<p>Question count: {{quiz.quiz.length}}</p>
-						<Button label="delete" />
+						<Button label="delete" @click="deleteFromApi({quizId: quiz.quizId}, `${API_URL}/delete-quiz`, errMsg, getUserData)" />
 					</template>
 				</Card>
 			</div>
@@ -104,7 +110,7 @@ function evalGuesses(){
 					<template #content>
 						<p>Question count: {{answers.addAnswers.length}}</p>
 						<p>Quiz Creator: {{answers.creatorName}}</p>
-						<Button label="delete" />
+						<Button label="delete" @click="deleteFromApi({answersId: answers.answersId}, `${API_URL}/delete-answers`, errMsg, getUserData)" />
 					</template>
 				</Card>
 			</div>
@@ -124,7 +130,7 @@ function evalGuesses(){
 						<p>You guessed {{guess.quizTaker}}'s answers.</p>
 						<p>Total Answers: {{guess.guesses.length}}.</p>
 						<p>Right guessed Answers: {{guess.rightAnswers}} ({{guess.rightPercent}}%).</p>
-						<Button label="delete" />
+						<Button label="delete" @click="deleteFromApi({guessId: guess.guessId}, `${API_URL}/delete-guesses`, errMsg, getUserData)" />
 					</template>
 				</Card>
 			</div>
