@@ -68,7 +68,7 @@ function startCreatingQuiz(){
 
 				<template #content>
 					<div class="content-container">
-						<div class="answer" v-for="(answer, index) in quizData.questionCount">
+						<div class="answer" v-for="(answer, index) of 4">
 							<label for="answer-id">Answer {{index+1}}: </label>
 							<InputText />
 						</div>
