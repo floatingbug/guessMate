@@ -1,15 +1,19 @@
 <script setup>
-import {ref, reactive} from "vue";
+import {ref, reactive, computed, inject} from "vue";
+import {useRouter} from "vue-router";
 import Card from "primevue/card";
 import Paginator from "primevue/paginator";
 import Textarea from "primevue/textarea";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
+const API_URL = inject("API_URL");
+const router = useRouter();
 const quizData = reactive({
 	quizTitle: "",
 	questionCount: 4,
 	questions: [],
 });
+const errMsg = ref("");
 const cardStyle = ref("");
 const isQuizInitialized = ref(false);
 
@@ -17,7 +21,7 @@ function initializeQuiz(){
 	for(let i = 0; i < quizData.questionCount; i++){
 		quizData.questions.push({
 			question: "",
-			answers: [],
+			answers: ["", "", "", ""],
 		});
 	}
 }
@@ -29,7 +33,51 @@ function changeSlide(page){
 
 function startCreatingQuiz(){
 	initializeQuiz();
-	if(quizData.question && quizData.questionCount) isQuizInitialized.value = true;
+	if(quizData.quizTitle && quizData.questionCount) isQuizInitialized.value = true;
+}
+
+const isAllFieldsFilled = computed(() => {
+	return quizData.questions.every(q => {
+		if(!q.question) return false;
+		
+		const isNotEmptyString = q.answers.every(a => a !== "");
+		if(!isNotEmptyString) return false;
+
+		return true;
+	});
+});
+
+async function addQuiz(){
+	const token = localStorage.getItem("token");
+	const data = {
+		quizTitle: quizData.quizTitle,
+		quiz: quizData.questions
+	};
+	const options = {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"Authorization": token
+		},
+		body: JSON.stringify(data)
+	};
+
+	try{
+		const response = await fetch(`${API_URL}/add-quiz`, options);
+		const result = await response.json();
+
+		console.log(result);
+		if(!result.success) return errMsg.value = result.msg;
+	}
+	catch(err){
+		return console.log(err);
+	}
+
+	router.push("/");
+}
+
+function cancelQuizCreation(){
+	router.push("/");
 }
 </script>
 
@@ -42,7 +90,7 @@ function startCreatingQuiz(){
 					<template #title>
 						<div class="title-initialize">
 							<label for="quiz-title">Quiz Title: </label>
-							<Textarea id="quiz-title" style="width: 80%;" v-model="quizData.question" />
+							<Textarea id="quiz-title" style="width: 80%;" v-model="quizData.quizTitle" />
 						</div>
 					</template>
 					
@@ -68,16 +116,24 @@ function startCreatingQuiz(){
 
 				<template #content>
 					<div class="content-container">
-						<div class="answer" v-for="(answer, index) of 4">
+						<div class="answer" v-for="(answer, index) of question.answers">
 							<label for="answer-id">Answer {{index+1}}: </label>
-							<InputText />
+							<InputText v-model="question.answers[index]" />
 						</div>
+					</div>
+			
+				</template>
+				
+				<template #footer>
+					<div v-if="isAllFieldsFilled" class="footer-buttons">
+						<Button label="add Quiz" @click="addQuiz" />
+						<Button label="cancel" @click="cancelQuizCreation" />
 					</div>
 				</template>
 			</Card>
 		</div>
 
-		<Paginator :rows="1" :totalRecords="quizData.questionCount" @page="changeSlide" />
+		<Paginator v-if="isQuizInitialized" :rows="1" :totalRecords="quizData.questionCount" @page="changeSlide" />
 	</div>
 </template>
 
@@ -114,10 +170,17 @@ function startCreatingQuiz(){
 .title-initialize {
 	display: flex;
 	align-items: center;
+	flex-wrap: wrap;
 }
 
-.title-initialize>label {
-	flex-basis: 125px;
+.title-initialize label {
+	min-width: 140px;
+	flex: 1;
+}
+
+.title-initialize textarea {
+	min-width: 200px;
+	flex: 3;
 }
 
 .content-initialize {
@@ -125,6 +188,7 @@ function startCreatingQuiz(){
 	gap: 2rem;
 	flex-direction: column;
 	align-items: center;
+	flex-wrap: wrap;
 	margin-top: 50px;
 }
 
@@ -133,6 +197,23 @@ function startCreatingQuiz(){
 	align-items: center;
 	gap: 1rem;
 	flex-wrap: wrap;
+}
+
+.question-count {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.question-count label {
+	min-width: 140px;
+	flex: 1;
+}
+
+.question-count span {
+	min-width: 200px;
+	flex: 3;
 }
 
 .question-container label {
@@ -171,7 +252,23 @@ function startCreatingQuiz(){
 	margin-top: 50px;
 }
 
+:deep(.p-inputnumber-input) {
+	min-width: 0;
+}
+
 .p-textarea {
 	resize: none;
+}
+
+.footer-buttons {
+	width: 100%;
+	display: flex;
+	justify-content: flex-end;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.footer-buttons :deep(.p-button) {
+	flex-basis: 145px;
 }
 </style>

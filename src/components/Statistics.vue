@@ -153,7 +153,7 @@ function evalGuesses(){
 .quizzes, .answers, .guesses {
 	width: 80%;
 	min-width: 300px;
-	max-width: 600px;
+	max-width: 400px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
