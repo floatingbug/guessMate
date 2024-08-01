@@ -50,7 +50,6 @@ async function getUserData(){
 		}
 
 		userData.value = result.data;
-		console.log(userData.value);
 	}
 	catch(err){
 		return console.log(err);
@@ -121,7 +120,7 @@ function evalGuesses(){
 		<div class="guesses">
 			<h1>Guessed Answeres</h1>
 		
-			<h3 v-if="userData.answers.length === 0">No guesses have been made yet</h3>
+			<h3 v-if="userData.guesses.length === 0">No guesses have been made yet</h3>
 		
 			<div v-if="userData.guesses.length > 0" class="card-container">
 				<Card v-for="(guess, index) in userData.guesses" :style="cardStyleGuesses">
@@ -135,7 +134,7 @@ function evalGuesses(){
 				</Card>
 			</div>
 
-			<Paginator :rows="1" :totalRecords="userData.answers.length" @page="changeSlideGuesses"></Paginator>
+			<Paginator :rows="1" :totalRecords="userData.guesses.length" @page="changeSlideGuesses"></Paginator>
 		</div>
 
 	</div>

@@ -5,11 +5,11 @@ import Paginator from "primevue/paginator";
 import InputText from "primevue/inputtext";
 const API_URL = inject("API_URL");
 const errMsg = ref("");
-const quizzes = ref(null);
-const currQuizzes = ref([]);
+const answers = ref(null);
+const currAnswers = ref([]);
 const currViewPort = ref("");
 const totalPages = ref(0);
-const emit = defineEmits(["startQuiz"]);
+const emit = defineEmits(["startGuess"]);
 const searchInput = ref("");
 const showPaginator = ref(true);
 let token = null;
@@ -26,19 +26,18 @@ onMounted(async () => {
 	};
 
 	try{
-		const response = await fetch(`${API_URL}/get-all-quizzes`, options);
+		const response = await fetch(`${API_URL}/get-all-answers`, options);
 		const result = await response.json();
 
 		if(!result.success) return errMsg.value = result.msg;
 
-		quizzes.value = result.data;
+		answers.value = result.data;
 	}
 	catch(err){
 		return console.log(err);
 	}
 
 	setCurrViewPort();
-	console.log(quizzes.value)
 })
 
 function setCurrViewPort(){
@@ -56,25 +55,25 @@ function getNextQuizzes(viewPort, page){
 	if(viewPort === "md") elementCount = 4;
 	if(viewPort === "sd") elementCount = 2;
 
-	currQuizzes.value = [];
+	currAnswers.value = [];
 
 	const endIndex = (page+1) * elementCount;
 
 	for(let i = page * elementCount; i < endIndex; i++){
-		currQuizzes.value.push(quizzes.value[i]);
+		currAnswers.value.push(answers.value[i]);
 		
-		if(!quizzes.value[i+1]) break;
+		if(!answers.value[i+1]) break;
 	}
 
-	totalPages.value = quizzes.value.length / elementCount;
+	totalPages.value = answers.value.length / elementCount;
 }
 
 function switchPage(p){
 	getNextQuizzes(currViewPort.value, p.page);
 }
 
-function startQuiz(id){
-	emit("startQuiz", id);
+function startGuess(answer){
+	emit("startGuess", {answersId: answer.answersId, quizId: answer.quizId});
 }
 
 // search engine
@@ -83,14 +82,14 @@ watch(searchInput, (newValue) => {
 		showPaginator.value = true;
 		return setCurrViewPort();
 	}
-	const foundQuizzes = quizzes.value.filter(q => {
+	const foundQuizzes = answers.value.filter(q => {
 		if(q.creatorName.includes(newValue)) return q;
 	});
 
 	if(foundQuizzes.length > 0){
-		currQuizzes.value = [];
+		currAnswers.value = [];
 		showPaginator.value = false;
-		return currQuizzes.value = foundQuizzes;
+		return currAnswers.value = foundQuizzes;
 	}
 
 	setCurrViewPort();
@@ -101,36 +100,42 @@ watch(searchInput, (newValue) => {
 <template>
 	<div class="container">
 		<div class="search-container">
-			<label for="search-input">Find quiz by quiz creator name: </label>
+			<label for="search-input">Find answer by quiz taker name: </label>
 			<InputText id="search-input" v-model="searchInput" />
 		</div>
 
 		<div class="card-container">
-			<Card v-for="(quiz, index) in currQuizzes">
+			<Card v-for="(answer, index) in currAnswers">
 				<template #title>
 					<div class="card-title">
-						<div class="quiz-title">
+						<div class="answer-title">
 							<span>Quiz Title: </span>
-							<span>{{quiz.quizTitle}}</span>
+							<span>{{answer.quizTitle}}</span>
 						</div>
 					</div>
 				</template>
 
 				<template #content>
 					<div class="card-content">
-						<div class="quiz-creator">
-							<span>Quiz Creator: </span>
-							<span>{{quiz.creatorName}}</span>
+						<div class="content-data">
+							<span>Quiz Taker: </span>
+							<span>{{answer.quizTaker}}</span>
 						</div>
-						<div class="question-count">
+
+						<div class="content-data">
+							<span>Quiz Creator: </span>
+							<span>{{answer.creatorName}}</span>
+						</div>
+
+						<div class="content-data">
 							<span>Questions: </span>
-							<span>{{quiz.quiz.length}}</span>
+							<span>{{answer.addAnswers.length}}</span>
 						</div>
 					</div>
 				</template>
 
 				<template #footer>
-					<Button label="Start Quizt" style="width: 100%; max-width: 300px; margin-top: 10%;" @click="startQuiz(quiz.quizId)" />
+					<Button label="Start Guess Answers" style="width: 100%; max-width: 300px; margin-top: 10%;" @click="startGuess(answer)" />
 				</template>
 			</Card>
 		</div>
@@ -183,16 +188,16 @@ watch(searchInput, (newValue) => {
 	font-size: 1.4rem;
 }
 
-.quiz-title {
+.answer-title {
 	width: 100%;
 	display: flex;
 }
 
-.quiz-title :first-child {
+.answer-title :first-child {
 	flex: 1;
 }
 
-.quiz-title :last-child {
+.answer-title :last-child {
 	flex: 2;
 }
 
@@ -210,11 +215,11 @@ watch(searchInput, (newValue) => {
 	display: flex;
 }
 
-.card-content * :first-child {
-	flex: 1;
+.content-data :first-child {
+	flex: 2;
 }
 
-.card-content * :last-child {
+.content-data :last-child {
 	flex: 2;
 }
 
