@@ -8,7 +8,7 @@ import GuessAnswersView from "../views/GuessAnswersView.vue";
 import TakeQuizView from "../views/TakeQuizView.vue";
 
 const router = createRouter({
-  history: createWebHistory("/guessmate"),
+  history: createWebHistory("/guessmate/"),
   routes: [
 		{
 			path: '/',
