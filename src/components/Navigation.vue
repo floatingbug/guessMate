@@ -1,16 +1,35 @@
 <script setup>
-import {ref, onMounted} from "vue";
+import {ref, onMounted, inject} from "vue";
+import {useRouter} from "vue-router";
 import {userStore} from "../store/store.js";
 import Menu from "primevue/menu";
+import ProgressSpinner from "./ProgressSpinner.vue";
+const API_URL = inject("API_URL");
+const router = useRouter();
 const breakpoint = ref(960);
 const isNavMdClose = ref(true);
 const isMobileMode = ref(window.innerWidth < breakpoint.value +1);
+const isDeletingAccount = ref(false);
+const isDeletingInProgress = ref(false);
+const errMsg = ref("");
 const menu = ref();
 const userMenuItems = ref([
+	{
+		label: "User Home",
+		command: () => {
+			router.push("/user");
+		}
+	},
 	{
 		label: "logout",
 		command: logoutUser
 	},
+	{
+		label: "delete account",
+		command: () => {
+			isDeletingAccount.value = true;
+		}
+	}
 ]);
 
 onMounted(() => {
@@ -30,6 +49,41 @@ function logoutUser(){
 	localStorage.removeItem("token");
 	localStorage.setItem("isSignedIn", false);
 	userStore.isSignedIn = false;
+	router.push("/sign-in");
+}
+
+async function deleteAccount(){
+	isDeletingInProgress.value = true;
+
+	const token = localStorage.getItem("token");
+	const options = {
+		method: "DELETE",
+		headers: {
+			"Authorization": token
+		}
+	};
+
+	try{
+		const response = await fetch(`${API_URL}/delete-user`, options);
+		const result = await response.json();
+
+		if(!result.success){
+			isDeletingInProgress.value = false;
+			return errMsg.value = result.msg;
+		}
+	}
+	catch(err){
+		isDeletingInProgress.value = false;
+		return console.log(err);
+	}
+
+	isDeletingInProgress.value = false;
+	isDeletingAccount.value = false;
+	
+	localStorage.removeItem("token");
+	localStorage.removeItem("isSignedIn");
+	userStore.isSignedIn = false;
+	router.push("/sign-up");
 }
 </script>
 
@@ -49,7 +103,7 @@ function logoutUser(){
 			<RouterLink class="link link-hover link-visited" to="/guess-answers">Guess Answers</RouterLink>
 		</div>
 
-		<div class="user-menu-ld" style="margin-right: 20px;">
+		<div v-if="userStore.isSignedIn" class="user-menu-ld" style="margin-right: 20px;">
 			<Button icon="pi pi-user" severity="info" outlined @click="toggle" />
 			<Menu ref="menu" :model="userMenuItems" :popup="true" />
 		</div>
@@ -77,9 +131,20 @@ function logoutUser(){
 		<Button v-if="isNavMdClose" class="nav-toggle-button" icon="pi pi-bars" size="large" text @click="isNavMdClose = false"></Button>
 	</div>
 
-	<div v-if="isMobileMode" class="user-menu-ld" style="align-self: flex-end; margin: 10px 10px 0 0">
+	<div v-if="isMobileMode && userStore.isSignedIn" class="user-menu-ld" style="align-self: flex-end; margin: 10px 10px 0 0">
 		<Button icon="pi pi-user" severity="info" outlined @click="toggle" />
 		<Menu ref="menu" :model="userMenuItems" :popup="true" />
+	</div>
+
+	<div v-if="isDeletingAccount" class="deleting-account-container">
+		<ProgressSpinner v-if="isDeletingInProgress" />
+
+		<h1>Delete Account</h1>
+		<div class="buttons">
+			<Button label="delete" severity="danger" @click="deleteAccount" />
+			<Button label="cancel" severity="secondary" @click="isDeletingAccount = false" />
+		</div>
+		<div v-if="errMsg" class="err-msg">{{errMsg}}</div>
 	</div>
 			
 </template>
@@ -217,5 +282,43 @@ function logoutUser(){
 	margin-top: 20px;
 }
 
+.deleting-account-container {
+	width: 80%;
+	min-width: 300px;
+	max-width: 600px;
+	height: 300px;
+	top: 15dvh;
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	background-color: rgb(from var(--p-surface-800) r g b / 50%);
+	backdrop-filter: blur(10px);
+	border: 1px solid var(--p-primary-900);
+	border-radius: 8px;
+	z-index: 999;
+}
 
+.deleting-account-container h1{
+	margin-top: 10%;
+}
+
+.deleting-account-container .buttons {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	gap: 1rem;
+	padding: 0 1rem;
+	margin-top: 10%;
+}
+
+.deleting-account-container .buttons *{
+	flex-basis: 150px;
+}
+
+.err-msg {
+	color: var(--p-red-400);
+}
 </style>

@@ -4,6 +4,7 @@ import {useRouter} from "vue-router";
 import {userStore} from "../store/store.js";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
+import ProgressSpinner from "../components/ProgressSpinner.vue";
 const router = useRouter();
 const credentials = reactive({
 	name: "",
@@ -11,6 +12,7 @@ const credentials = reactive({
 });
 const errMsg = ref("");
 const API_URL = inject("API_URL");
+const isLoading = ref(false);
 
 async function signIn(){
 	const jsonCredentials = JSON.stringify(credentials);
@@ -23,10 +25,13 @@ async function signIn(){
 	};
 
 	try{
+		isLoading.value = true;
+		
 		const response = await fetch(`${API_URL}/sign-in`, options);
 		const result = await response.json();
 		
 		if(!result.success){
+			isLoading.value = false;
 			return errMsg.value = result.msg;
 		}
 
@@ -38,15 +43,19 @@ async function signIn(){
 		userStore.isSignedIn = true;
 	}
 	catch(err){
+		isLoading.value = false;
 		return console.log(err);
 	}
 
+	isLoading.value = false;
 	router.push("/");
 }
 </script>
 
 <template>
 	<div class="sign-up-container">
+		<ProgressSpinner v-if="isLoading" />
+
 		<h2 style="margin-top: 0px;">Sign in</h2>
 
 		<div class="form-input">
@@ -69,6 +78,7 @@ async function signIn(){
 <style scoped>
 .sign-up-container {
 	width: clamp(300px, 50%, 600px);
+	position: relative;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
