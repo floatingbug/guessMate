@@ -6,6 +6,7 @@ import TestView from "../views/TestView.vue";
 import CreateQuizView from "../views/CreateQuizView.vue";
 import GuessAnswersView from "../views/GuessAnswersView.vue";
 import TakeQuizView from "../views/TakeQuizView.vue";
+import UserView from "../views/UserView.vue";
 
 const router = createRouter({
   history: createWebHistory("/guessmate/"),
@@ -44,8 +45,12 @@ const router = createRouter({
 		  path: "/take-quiz",
 		  name: "takeQuiz",
 		  component: TakeQuizView
-	  }
-
+	  },
+		{
+			path: "/user",
+			name: "user",
+			component: UserView
+		}
 	]
 })
 
