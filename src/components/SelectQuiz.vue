@@ -2,6 +2,7 @@
 import {ref, onMounted, inject, watch} from "vue";
 import Card from "primevue/card";
 import Paginator from "primevue/paginator";
+import ProgressSpinner from "./ProgressSpinner.vue";
 import InputText from "primevue/inputtext";
 const API_URL = inject("API_URL");
 const errMsg = ref("");
@@ -12,9 +13,12 @@ const totalPages = ref(0);
 const emit = defineEmits(["startQuiz"]);
 const searchInput = ref("");
 const showPaginator = ref(true);
+const isReceivingData = ref(false);
 let token = null;
 
 onMounted(async () => {
+	isReceivingData.value = true;
+
 	window.addEventListener("resize", setCurrViewPort);
 
 	token = localStorage.getItem("token");
@@ -29,11 +33,14 @@ onMounted(async () => {
 		const response = await fetch(`${API_URL}/get-all-quizzes`, options);
 		const result = await response.json();
 
+		isReceivingData.value = false;
+
 		if(!result.success) return errMsg.value = result.msg;
 
 		quizzes.value = result.data;
 	}
 	catch(err){
+		isReceivingData.value = false;
 		return console.log(err);
 	}
 
@@ -100,6 +107,9 @@ watch(searchInput, (newValue) => {
 
 <template>
 	<div class="container">
+
+		<ProgressSpinner v-if="isReceivingData" />
+
 		<div class="search-container">
 			<label for="search-input">Find quiz by quiz creator name: </label>
 			<InputText id="search-input" v-model="searchInput" />

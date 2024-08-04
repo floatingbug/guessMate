@@ -2,22 +2,27 @@
 import {ref, onMounted, inject} from "vue";
 import Card from "primevue/card";
 import Paginator from 'primevue/paginator';
+import ProgressSpinner from "./ProgressSpinner.vue";
 import {deleteFromApi} from "../services/deleteFromApi.js";
 const API_URL = inject("API_URL");
 const userData = ref();
 const errMsg = ref("");
 const isResponseFromServer = ref(false);
+const isLoading = ref(false);
 const cardStyleQuizzes = ref("");
 const cardStyleAnswers = ref("");
 const cardStyleGuesses = ref("");
 let token = null;
 
 onMounted(async () => {
+	isLoading.value = true;
+
 	token = localStorage.getItem("token");
 
 	await getUserData();
 
 	isResponseFromServer.value = true;
+	isLoading.value = false;
 });
 
 function changeSlideQuizzes(e){
@@ -76,6 +81,8 @@ function evalGuesses(){
 
 
 <template>
+	<ProgressSpinner v-if="isLoading" /> 
+
 	<div v-if="errMsg" class="err-msg">{{errMsg}}</div>
 
 	<div v-if="!errMsg && isResponseFromServer" class="statistics-container">

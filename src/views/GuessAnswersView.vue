@@ -3,9 +3,11 @@ import {ref, onMounted, inject} from "vue";
 import {useRouter} from "vue-router";
 import SelectAnswer from "../components/SelectAnswer.vue";
 import Card from "primevue/card";
+import ProgressSpinner from "../components/ProgressSpinner.vue";
 const router = useRouter();
 const isGuessStarted = ref(false);
 const isDataLoadedFromServer = ref(false);
+const isSendingData = ref(false);
 const quiz = ref([]);
 const errMsg = ref("");
 const API_URL = inject("API_URL");
@@ -64,6 +66,7 @@ function makeGuess(index, answers){
 }
 
 async function sendGuesses(guesses, answersId){
+	isSendingData.value = true;
 	const data = {
 		answersId: answersId,
 		guesses: guesses
@@ -82,9 +85,12 @@ async function sendGuesses(guesses, answersId){
 		const response = await fetch(`${API_URL}/add-guess`, options);
 		const result = await response.json();
 
+		isSendingData.value = false;
+
 		if(!result.success) return errMsg.value = result.msg;
 	}
 	catch(err){
+		isSendingData.value = false;
 		return console.log(err);
 	}
 
@@ -99,6 +105,9 @@ async function sendGuesses(guesses, answersId){
 	<SelectAnswer v-if="!isGuessStarted" @startGuess="startGuess" />
 
 	<div v-if="isGuessStarted && isDataLoadedFromServer" class="container">
+
+		<ProgressSpinner v-if="isSendingData" />
+
 		<div class="slider-container">
 			<Card v-for="(question, index) in quiz" :style="cardStyle">
 				<template #title>

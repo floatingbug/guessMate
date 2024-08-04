@@ -3,11 +3,13 @@ import {ref, inject} from "vue";
 import {useRouter} from "vue-router";
 import Card from "primevue/card";
 import SelectQuiz from "../components/SelectQuiz.vue";
+import ProgressSpinner from "../components/ProgressSpinner.vue";
 const router = useRouter();
 const isQuizSelecting = ref(true);
 const quiz = ref(null);
 const API_URL = inject("API_URL");
 const isDataReceived = ref(false);
+const isSendingData = ref(false);
 const errMsg = ref("");
 let currSlide = 0;
 let slideCount = 1;
@@ -61,6 +63,8 @@ function makeAnswer(index){
 }
 
 async function sendAnswers(answers){
+	isSendingData.value = true;
+
 	const data = {
 		quizId: quiz.value.quizId,
 		answers: answers
@@ -79,9 +83,12 @@ async function sendAnswers(answers){
 		const response = await fetch(`${API_URL}/add-answers`, options);
 		const result = await response.json();
 
+		isSendingData.value = false;
+
 		if(!result.success) return errMsg.value = result.msg;
 	}
 	catch(err){
+		isSendingData.value = false;
 		console.log(err)
 	}
 
@@ -96,6 +103,9 @@ async function sendAnswers(answers){
 	<div v-if="errMsg" class="err-msg">{{errMsg}}</div>
 
 	<div v-if="!isQuizSelecting && isDataReceived" class="container">
+
+		<ProgressSpinner v-if="isSendingData" /> 
+
 		<div class="slide-container">
 			<Card v-for="(question, index) in quiz.quiz" :style="cardContentStyle">
 				<template #title>

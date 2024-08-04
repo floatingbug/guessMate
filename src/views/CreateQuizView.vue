@@ -3,6 +3,7 @@ import {ref, reactive, computed, inject} from "vue";
 import {useRouter} from "vue-router";
 import Card from "primevue/card";
 import Paginator from "primevue/paginator";
+import ProgressSpinner from "../components/ProgressSpinner.vue";
 import Textarea from "primevue/textarea";
 import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
@@ -16,6 +17,7 @@ const quizData = reactive({
 const errMsg = ref("");
 const cardStyle = ref("");
 const isQuizInitialized = ref(false);
+const isSendingData = ref(false);
 
 function initializeQuiz(){
 	for(let i = 0; i < quizData.questionCount; i++){
@@ -48,6 +50,7 @@ const isAllFieldsFilled = computed(() => {
 });
 
 async function addQuiz(){
+	isSendingData.value = true;
 	const token = localStorage.getItem("token");
 	const data = {
 		quizTitle: quizData.quizTitle,
@@ -66,10 +69,12 @@ async function addQuiz(){
 		const response = await fetch(`${API_URL}/add-quiz`, options);
 		const result = await response.json();
 
-		console.log(result);
+		isSendingData.value = false;
+
 		if(!result.success) return errMsg.value = result.msg;
 	}
 	catch(err){
+		isSendingData.value = false;
 		return console.log(err);
 	}
 
@@ -84,6 +89,9 @@ function cancelQuizCreation(){
 
 <template>
 	<div class="container">
+
+		<ProgressSpinner v-if="isSendingData" />
+
 		<div class="slide-container">
 			<div v-if="!isQuizInitialized" class="initialize-quiz">
 				<Card>

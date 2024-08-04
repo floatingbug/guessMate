@@ -3,6 +3,7 @@ import {ref, onMounted, inject, watch} from "vue";
 import Card from "primevue/card";
 import Paginator from "primevue/paginator";
 import InputText from "primevue/inputtext";
+import ProgressSpinner from "./ProgressSpinner.vue";
 const API_URL = inject("API_URL");
 const errMsg = ref("");
 const answers = ref(null);
@@ -12,9 +13,12 @@ const totalPages = ref(0);
 const emit = defineEmits(["startGuess"]);
 const searchInput = ref("");
 const showPaginator = ref(true);
+const isReceivingData = ref(false);
 let token = null;
 
 onMounted(async () => {
+	isReceivingData.value = true;
+
 	window.addEventListener("resize", setCurrViewPort);
 
 	token = localStorage.getItem("token");
@@ -29,11 +33,14 @@ onMounted(async () => {
 		const response = await fetch(`${API_URL}/get-all-answers`, options);
 		const result = await response.json();
 
+		isReceivingData.value = false;
+		
 		if(!result.success) return errMsg.value = result.msg;
 
 		answers.value = result.data;
 	}
 	catch(err){
+		isReceivingData.value = false;
 		return console.log(err);
 	}
 
@@ -99,6 +106,9 @@ watch(searchInput, (newValue) => {
 
 <template>
 	<div class="container">
+
+		<ProgressSpinner v-if="isReceivingData" />
+
 		<div class="search-container">
 			<label for="search-input">Find answer by quiz taker name: </label>
 			<InputText id="search-input" v-model="searchInput" />
@@ -108,7 +118,7 @@ watch(searchInput, (newValue) => {
 			<Card v-for="(answer, index) in currAnswers">
 				<template #title>
 					<div class="card-title">
-						<div class="answer-title">
+						<div class="content-data">
 							<span>Quiz Title: </span>
 							<span>{{answer.quizTitle}}</span>
 						</div>
@@ -180,6 +190,7 @@ watch(searchInput, (newValue) => {
 	width: 90%;
 	max-width: 600px;
 	border: 1px solid var(--p-primary-900);
+	padding: 1rem;
 }
 
 .card-title {
@@ -188,18 +199,6 @@ watch(searchInput, (newValue) => {
 	font-size: 1.4rem;
 }
 
-.answer-title {
-	width: 100%;
-	display: flex;
-}
-
-.answer-title :first-child {
-	flex: 1;
-}
-
-.answer-title :last-child {
-	flex: 2;
-}
 
 .card-content {
 	width: 100%;
@@ -216,11 +215,11 @@ watch(searchInput, (newValue) => {
 }
 
 .content-data :first-child {
-	flex: 2;
+	flex: 1;
 }
 
 .content-data :last-child {
-	flex: 2;
+	flex: 1;
 }
 
 :deep(.p-paginator) {

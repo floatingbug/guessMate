@@ -4,8 +4,8 @@ import { RouterLink, RouterView } from 'vue-router'
 import {userStore} from "./store/store.js";
 import Navigation from "./components/Navigation.vue";
 
-provide("API_URL", "http://194.195.241.51/guessmateapi");
-//provide("API_URL", "http://localhost:3000");
+//provide("API_URL", "http://194.195.241.51/guessmateapi");
+provide("API_URL", "http://localhost:3000/guessmateapi");
 
 onMounted(() => {
 	const isSignedIn = localStorage.getItem("isSignedIn");
